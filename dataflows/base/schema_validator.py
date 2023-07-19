@@ -65,9 +65,11 @@ def schema_validator(resource, iterator,
     if field_names is None:
         field_names = [f.name for f in schema.fields]
     schema_fields = [f for f in schema.fields if f.name in field_names]
+    iterator_isEmpty = True
     for i, row in enumerate(iterator):
         field = None
         okay = True
+        iterator_isEmpty = False
         for field in schema_fields:
             try:
                 row[field.name] = field.cast_value(row.get(field.name))
@@ -76,6 +78,11 @@ def schema_validator(resource, iterator,
                     okay = False
         if okay:
             yield row
+    if iterator_isEmpty:
+        if on_error.__name__ != 'raise_exception':
+            on_error(resource['name'], None, None, None, None)
+        else:
+            raise Exception('Iterator is empty: No Data')
 
 
 schema_validator.drop = drop
